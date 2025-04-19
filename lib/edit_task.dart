@@ -11,14 +11,14 @@ class EditTask extends StatelessWidget {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            final task = Task();
+            final task = TaskEntity();
             task.name = 'test';
-            task.isComplete= false;
+            task.isComplete = false;
             task.periority = Periority.low;
-            if(task.isInBox){
+            if (task.isInBox) {
               task.save();
-            }else{
-              final Box<Task> box = Hive.box(taskBoxName);
+            } else {
+              final Box<TaskEntity> box = Hive.box(taskBoxName);
               box.add(task);
             }
           },
