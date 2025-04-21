@@ -16,10 +16,10 @@ class HomeScreen extends StatelessWidget {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const EditTask()),
+              MaterialPageRoute(builder: (context) => const EditTaskScreen()),
             );
           },
-          label: const Text('label')),
+          label: const Text('افزودن')),
       body: SafeArea(
         child: Column(children: [
           Container(
@@ -109,7 +109,13 @@ class _TaskItemState extends State<TaskItem> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               MyCheckBox(widget.task.isComplete),
-              widget.task.isComplete ? Text(widget.task.name,style: const TextStyle(decoration: TextDecoration.lineThrough),) : Text(widget.task.name),
+              widget.task.isComplete
+                  ? Text(
+                      widget.task.name,
+                      style: const TextStyle(
+                          decoration: TextDecoration.lineThrough),
+                    )
+                  : Text(widget.task.name),
             ],
           ),
         ),
