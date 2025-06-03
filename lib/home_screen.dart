@@ -16,7 +16,9 @@ class HomeScreen extends StatelessWidget {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const EditTaskScreen()),
+              MaterialPageRoute(
+                  builder: (context) =>
+                      EditTaskScreen(taskEntity: TaskEntity())),
             );
           },
           label: const Text('افزودن')),
@@ -104,7 +106,13 @@ class _TaskItemState extends State<TaskItem> {
         },
         child: Container(
           height: 68,
-          decoration: const BoxDecoration(color: Colors.blue),
+          decoration: BoxDecoration(
+            color: widget.task.periority == Periority.low
+                ? Colors.red
+                : widget.task.periority == Periority.high
+                    ? Colors.blue
+                    : Colors.yellow,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

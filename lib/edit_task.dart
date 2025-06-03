@@ -3,26 +3,46 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:task_list/data.dart';
 import 'package:task_list/main.dart';
 
-class EditTaskScreen extends StatelessWidget {
-  const EditTaskScreen({super.key});
+class EditTaskScreen extends StatefulWidget {
+  final TaskEntity taskEntity;
+  // This is a placeholder for the TaskEntity that will be edited.
+  const EditTaskScreen({super.key, required this.taskEntity});
+
+  @override
+  State<EditTaskScreen> createState() => _EditTaskScreenState();
+}
+
+class _EditTaskScreenState extends State<EditTaskScreen> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.taskEntity.name);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            final task = TaskEntity();
-            task.name = 'test';
-            task.isComplete = false;
-            task.periority = Periority.low;
-            if (task.isInBox) {
-              task.save();
-            } else {
-              final Box<TaskEntity> box = Hive.box(taskBoxName);
-              box.add(task);
-            }
-          },
-          label: const Text('save')),
+        onPressed: () async {
+          widget.taskEntity.name = _controller.text;
+          final box = Hive.box<TaskEntity>(taskBoxName);
+          if (widget.taskEntity.isInBox) {
+            await widget.taskEntity.save();
+          } else {
+            await box.add(widget.taskEntity);
+          }
+          Navigator.pop(context); // بستن صفحه بعد از ذخیره
+        },
+        label: const Text('save'),
+      ),
       backgroundColor: Colors.red,
       body: Column(
         children: [
@@ -30,14 +50,59 @@ class EditTaskScreen extends StatelessWidget {
             title: const Text('ویرایش وظایف'),
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
-          const Flex(
+          Flex(
             direction: Axis.horizontal,
-          children: [
-            Flexible(flex: 1, child: PeriorityCheckBox(color: Colors.blue, lable: 'high', isSelected: false)),
-            Flexible(flex: 1, child: PeriorityCheckBox(color: Colors.blue, lable: 'normal', isSelected: false)),
-            Flexible(flex: 1, child: PeriorityCheckBox(color: Colors.blue, lable: 'low', isSelected: false)),
-          ],
-          )
+            children: [
+              Flexible(
+                  flex: 1,
+                  child: PeriorityCheckBox(
+                    color: Colors.blue,
+                    lable: 'high',
+                    isSelected: widget.taskEntity.periority == Periority.high,
+                    onTap: () {
+                      setState(() {
+                        widget.taskEntity.periority = Periority.high;
+                      });
+                    },
+                  )),
+              Flexible(
+                  flex: 1,
+                  child: PeriorityCheckBox(
+                    color: Colors.yellow,
+                    lable: 'normal',
+                    isSelected: widget.taskEntity.periority == Periority.normal,
+                    onTap: () {
+                      setState(() {
+                        widget.taskEntity.periority = Periority.normal;
+                      });
+                    },
+                  )),
+              Flexible(
+                  flex: 1,
+                  child: PeriorityCheckBox(
+                    color: Colors.red,
+                    lable: 'low',
+                    isSelected: widget.taskEntity.periority == Periority.low,
+                    onTap: () {
+                      setState(() {
+                        widget.taskEntity.periority = Periority.low;
+                      });
+                    },
+                  )),
+            ],
+          ),
+          const SizedBox(height: 20),
+          TextField(
+            decoration: const InputDecoration(
+              labelText: 'نام ',
+              border: OutlineInputBorder(),
+            ),
+            controller: _controller,
+            onChanged: (value) {
+              // مقدار name را همزمان به‌روزرسانی کن (اختیاری)
+              widget.taskEntity.name = value;
+            },
+          ),
         ],
       ),
     );
@@ -48,33 +113,46 @@ class PeriorityCheckBox extends StatelessWidget {
   final Color color;
   final String lable;
   final bool isSelected;
+  final GestureTapCallback onTap;
 
-  const PeriorityCheckBox({super.key, required this.color, required this.lable, required this.isSelected});
+  const PeriorityCheckBox({
+    super.key,
+    required this.color,
+    required this.lable,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 16,
-      width: 16,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary,
-          width: 2.0,
-        ),
-      ),
-      child: Row(
-        children: [
-          Text(lable),
-          if (isSelected)
-            Icon(
-              Icons.check,
-              color: Theme.of(context).colorScheme.onPrimary,
-              size: 16.0,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        InkWell(
+          onTap: onTap,
+          child: Container(
+            height: 24,
+            width: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2.0,
+              ),
             ),
-        ],
-      ),
+            child: isSelected
+                ? Icon(
+                    Icons.check,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    size: 16.0,
+                  )
+                : null,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(lable),
+      ],
     );
   }
 }
