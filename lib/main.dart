@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:task_list/data.dart';
-import 'package:task_list/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:task_list/data/data.dart';
+import 'package:task_list/data/repo/repository.dart';
+import 'package:task_list/data/source/hive_task_source.dart';
+import 'package:task_list/screens/homeScreen/home_screen.dart';
 
 const String taskBoxName = "taskBox";
 void main() async {
@@ -13,7 +16,12 @@ void main() async {
   await Hive.openBox<TaskEntity>(taskBoxName);
   SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Color(0xFF6200EE)));
-  runApp(const MyApp());
+
+  runApp(ChangeNotifierProvider(
+      create: (BuildContext context) {
+        return Repository<TaskEntity>(localDataSource: HiveTaskSource(Hive.box<TaskEntity>(taskBoxName)));
+      },
+      child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {

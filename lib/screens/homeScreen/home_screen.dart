@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:task_list/data/data.dart';
+import 'package:task_list/data/repo/repository.dart';
 import 'package:task_list/screens/editTask/edit_task.dart';
-import 'package:task_list/main.dart';
 import 'package:task_list/widgets.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,7 +17,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final box = Hive.box<TaskEntity>(taskBoxName);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       floatingActionButton: FloatingActionButton.extended(
@@ -61,42 +60,64 @@ class _HomeScreenState extends State<HomeScreen> {
             ]),
           ),
           Expanded(
-            child: ValueListenableBuilder<Box<TaskEntity>>(
-              builder: (context, box, child) {
-                final tasks = box.values
-                    .where((task) => task.name
-                        .toLowerCase()
-                        .contains(searchText.toLowerCase()))
-                    .toList();
-                return ListView.builder(
-                  //itemCount: box.values.length + 1,
-                  itemCount: tasks.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Today'),
-                          MaterialButton(
-                            onPressed: () {
-                              box.clear();
-                            },
-                            child: const Text('DeleteAll'),
-                          )
-                        ],
-                      );
+            child: Consumer<Repository<TaskEntity>>(
+              builder: (context, repository, child) {
+                return FutureBuilder<List<TaskEntity>>(
+                  future: repository.searchByKeyWord(searchText),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(child: Text('No tasks found.'));
                     } else {
-                      //return TaskItem(task: tasks.toList()[index - 1]);
-                      return TaskItem(task: tasks[index - 1]);
+                      return TaskList(tasks: snapshot.data!);
                     }
                   },
                 );
               },
-              valueListenable: box.listenable(),
             ),
           ),
         ]),
       ),
+    );
+  }
+}
+
+class TaskList extends StatelessWidget {
+  const TaskList({
+    super.key,
+    required this.tasks,
+  });
+
+  final List<TaskEntity> tasks;
+
+  @override
+  Widget build(BuildContext context) {
+    final repository =
+        Provider.of<Repository<TaskEntity>>(context, listen: false);
+
+    return ListView.builder(
+      itemCount: tasks.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Today'),
+              MaterialButton(
+                onPressed: () async {
+                  await repository.deleteAll();
+                },
+                child: const Text('DeleteAll'),
+              )
+            ],
+          );
+        } else {
+          return TaskItem(task: tasks[index - 1]);
+        }
+      },
     );
   }
 }
@@ -160,4 +181,3 @@ class _TaskItemState extends State<TaskItem> {
     );
   }
 }
-

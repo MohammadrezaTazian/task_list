@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:task_list/data.dart';
-import 'package:task_list/main.dart';
+import 'package:provider/provider.dart';
+import 'package:task_list/data/data.dart';
+import 'package:task_list/data/repo/repository.dart';
 
 class EditTaskScreen extends StatefulWidget {
   final TaskEntity taskEntity;
@@ -29,16 +29,14 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final repository = Provider.of<Repository<TaskEntity>>(context, listen: false);
+
+
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           widget.taskEntity.name = _controller.text;
-          final box = Hive.box<TaskEntity>(taskBoxName);
-          if (widget.taskEntity.isInBox) {
-            await widget.taskEntity.save();
-          } else {
-            await box.add(widget.taskEntity);
-          }
+          repository.createOrUpdate(widget.taskEntity);
           Navigator.pop(context); // بستن صفحه بعد از ذخیره
         },
         label: const Text('save'),
