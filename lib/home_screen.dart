@@ -62,7 +62,9 @@ class HomeScreen extends StatelessWidget {
                         children: [
                           const Text('Today'),
                           MaterialButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              box.clear();
+                            },
                             child: const Text('DeleteAll'),
                           )
                         ],
@@ -100,9 +102,12 @@ class _TaskItemState extends State<TaskItem> {
       padding: const EdgeInsets.all(32),
       child: InkWell(
         onTap: () {
-          setState(() {
-            widget.task.isComplete = !widget.task.isComplete;
-          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EditTaskScreen(taskEntity: widget.task),
+            ),
+          );
         },
         child: Container(
           height: 68,
@@ -116,7 +121,14 @@ class _TaskItemState extends State<TaskItem> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              MyCheckBox(widget.task.isComplete),
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    widget.task.isComplete = !widget.task.isComplete;
+                  });
+                },
+                child: MyCheckBox(widget.task.isComplete),
+              ),
               widget.task.isComplete
                   ? Text(
                       widget.task.name,
