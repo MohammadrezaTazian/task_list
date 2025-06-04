@@ -4,8 +4,15 @@ import 'package:task_list/data.dart';
 import 'package:task_list/edit_task.dart';
 import 'package:task_list/main.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String searchText = '';
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +52,9 @@ class HomeScreen extends StatelessWidget {
                   fillColor: Theme.of(context).colorScheme.surface,
                 ),
                 onChanged: (value) {
-                  // Add search logic here
+                  setState(() {
+                    searchText = value;
+                  });
                 },
               ),
             ]),
@@ -53,8 +62,14 @@ class HomeScreen extends StatelessWidget {
           Expanded(
             child: ValueListenableBuilder<Box<TaskEntity>>(
               builder: (context, box, child) {
+                final tasks = box.values
+                    .where((task) => task.name
+                        .toLowerCase()
+                        .contains(searchText.toLowerCase()))
+                    .toList();
                 return ListView.builder(
-                  itemCount: box.values.length + 1,
+                  //itemCount: box.values.length + 1,
+                  itemCount: tasks.length + 1,
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return Row(
@@ -70,7 +85,8 @@ class HomeScreen extends StatelessWidget {
                         ],
                       );
                     } else {
-                      return TaskItem(task: box.values.toList()[index - 1]);
+                      //return TaskItem(task: tasks.toList()[index - 1]);
+                      return TaskItem(task: tasks[index - 1]);
                     }
                   },
                 );
