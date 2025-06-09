@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:task_list/data/data.dart';
 import 'package:task_list/data/repo/repository.dart';
 import 'package:task_list/screens/editTask/edit_task.dart';
+import 'package:task_list/screens/homeScreen/bloc/task_list_bloc.dart';
 import 'package:task_list/widgets.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -29,57 +31,61 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
           label: const Text('افزودن')),
-      body: SafeArea(
-        child: Column(children: [
-          Container(
-            padding: const EdgeInsets.all(8.0),
-            decoration:
-                BoxDecoration(color: Theme.of(context).colorScheme.primary),
-            child: Column(children: [
-              AppBar(
-                title: const Text('لیست وظایف'),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-              ),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'جستجو...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
+      body: BlocProvider<TaskListBloc>(
+        create: (context) => TaskListBloc(repository: context.read()),
+        child: SafeArea(
+          child: Column(children: [
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration:
+                  BoxDecoration(color: Theme.of(context).colorScheme.primary),
+              child: Column(children: [
+                AppBar(
+                  title: const Text('لیست وظایف'),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    searchText = value;
-                  });
-                },
-              ),
-            ]),
-          ),
-          Expanded(
-            child: Consumer<Repository<TaskEntity>>(
-              builder: (context, repository, child) {
-                return FutureBuilder<List<TaskEntity>>(
-                  future: repository.searchByKeyWord(searchText),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(child: Text('No tasks found.'));
-                    } else {
-                      return TaskList(tasks: snapshot.data!);
-                    }
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'جستجو...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                  ),
+                  onChanged: (value) {
+                   context.read<TaskListBloc>().add(TaskListSearch(searchTerm: value));
                   },
-                );
-              },
+                ),
+              ]),
             ),
-          ),
-        ]),
+            Expanded(
+              child: Consumer<Repository<TaskEntity>>(
+                builder: (context, reposutory, child) {
+                   context.read<TaskListBloc>().add(TaskListStarted()) ;
+               
+                return  BlocBuilder<TaskListBloc, TaskListState>(
+                    builder: (context, state) {
+                  if (state is TaskListSuccess) {
+                    return TaskList(tasks: state.items);
+                  } else if (state is TaskListLodding) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is TaskListEmpty) {
+                    return const Center(child: Text('No tasks found'));
+                  } else if (state is TaskListError) {
+                    return Center(child: Text(state.message));
+                  } else {
+                    return const Center(child: Text('Invalid state'));
+                  }
+                }
+                );
+               },
+               ),
+            ),
+          ]),
+        ),
       ),
     );
   }
