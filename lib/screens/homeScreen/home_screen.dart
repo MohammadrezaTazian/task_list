@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:task_list/data/data.dart';
 import 'package:task_list/data/repo/repository.dart';
+import 'package:task_list/screens/editTask/cubit/edit_task_cubit.dart';
 import 'package:task_list/screens/editTask/edit_task.dart';
 import 'package:task_list/screens/homeScreen/bloc/task_list_bloc.dart';
 import 'package:task_list/widgets.dart';
@@ -26,8 +27,14 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) =>
-                      EditTaskScreen(taskEntity: TaskEntity())),
+                  builder: (context) => BlocProvider(
+                        create: (context) {
+                          return EditTaskCubit(TaskEntity(), context.read<Repository<TaskEntity>>())
+                            ..onTextChanged('')
+                            ..onPeriorityChanged(Periority.low);
+                        },
+                        child: const EditTaskScreen(),
+                      )),
             );
           },
           label: const Text('افزودن')),
@@ -56,7 +63,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     fillColor: Theme.of(context).colorScheme.surface,
                   ),
                   onChanged: (value) {
-                   context.read<TaskListBloc>().add(TaskListSearch(searchTerm: value));
+                    context
+                        .read<TaskListBloc>()
+                        .add(TaskListSearch(searchTerm: value));
                   },
                 ),
               ]),
@@ -64,25 +73,24 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: Consumer<Repository<TaskEntity>>(
                 builder: (context, reposutory, child) {
-                   context.read<TaskListBloc>().add(TaskListStarted()) ;
-               
-                return  BlocBuilder<TaskListBloc, TaskListState>(
-                    builder: (context, state) {
-                  if (state is TaskListSuccess) {
-                    return TaskList(tasks: state.items);
-                  } else if (state is TaskListLodding) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (state is TaskListEmpty) {
-                    return const Center(child: Text('No tasks found'));
-                  } else if (state is TaskListError) {
-                    return Center(child: Text(state.message));
-                  } else {
-                    return const Center(child: Text('Invalid state'));
-                  }
-                }
-                );
-               },
-               ),
+                  context.read<TaskListBloc>().add(TaskListStarted());
+
+                  return BlocBuilder<TaskListBloc, TaskListState>(
+                      builder: (context, state) {
+                    if (state is TaskListSuccess) {
+                      return TaskList(tasks: state.items);
+                    } else if (state is TaskListLodding) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (state is TaskListEmpty) {
+                      return const Center(child: Text('No tasks found'));
+                    } else if (state is TaskListError) {
+                      return Center(child: Text(state.message));
+                    } else {
+                      return const Center(child: Text('Invalid state'));
+                    }
+                  });
+                },
+              ),
             ),
           ]),
         ),
@@ -149,7 +157,15 @@ class _TaskItemState extends State<TaskItem> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => EditTaskScreen(taskEntity: widget.task),
+              builder: (context) => BlocProvider(
+                create: (context) {
+                  return EditTaskCubit(
+                      widget.task, context.read<Repository<TaskEntity>>())
+                    ..onTextChanged(widget.task.name)
+                    ..onPeriorityChanged(widget.task.periority);
+                },
+                child: const EditTaskScreen(),
+              ),
             ),
           );
         },
